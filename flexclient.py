@@ -8,7 +8,7 @@ import time
 bPort = input("Port(Blank = 8882): ")
 if(bPort == ""):
 	bPort = "8882"
-
+# hewwo from kirakira :)
 # Do not change
 FX_PACKET_MAGIC = 0x88885846
 
@@ -38,7 +38,7 @@ def sendFx(msg_content):
 
 			size = fxsock.send(msg[sent_size:])
 
-		except TimeoutError:
+		except (TimeoutError, OSError, ConnectionError):
 
 			return False
 
@@ -68,7 +68,7 @@ def recvFxRaw(data_size):
 
 			data = fxsock.recv(data_size - len(msg_data))
 
-		except TimeoutError:
+		except (TimeoutError, OSError, ConnectionError):
 
 			return None
 
@@ -202,7 +202,7 @@ def fxHandleWebRequest(web_msg):
 		
 		return json.dumps(web_response)
 
-async def webhandler(websocket, path):
+async def webhandler(websocket):
 
 	global fxsock
 	global fx_net_ctrl_ver
@@ -242,7 +242,9 @@ async def webhandler(websocket, path):
 				pass
 			return
  
-wsserver = websockets.serve(webhandler, "localhost", int(bPort))
- 
-asyncio.get_event_loop().run_until_complete(wsserver)
-asyncio.get_event_loop().run_forever()
+async def main():
+    server = await websockets.serve(webhandler, "localhost", int(bPort))
+    await server.wait_closed()
+
+if __name__ == "__main__":
+    asyncio.run(main())
