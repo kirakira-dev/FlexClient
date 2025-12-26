@@ -5,11 +5,8 @@ import json
 from threading import Thread, Lock
 import time
 
-bPort = input("Port(Blank = 8882): ")
-if(bPort == ""):
-	bPort = "8882"
-
-# Do not change
+# this version of flexclient was updated by kirakira, i do not take any credit for it, and i only fixed some updated APIs and bugs
+# magiiiccc
 FX_PACKET_MAGIC = 0x88885846
 
 fxsock = None
@@ -38,7 +35,7 @@ def sendFx(msg_content):
 
 			size = fxsock.send(msg[sent_size:])
 
-		except TimeoutError:
+		except (TimeoutError, OSError, ConnectionError):
 
 			return False
 
@@ -68,7 +65,7 @@ def recvFxRaw(data_size):
 
 			data = fxsock.recv(data_size - len(msg_data))
 
-		except TimeoutError:
+		except (TimeoutError, OSError, ConnectionError):
 
 			return None
 
@@ -202,7 +199,7 @@ def fxHandleWebRequest(web_msg):
 		
 		return json.dumps(web_response)
 
-async def webhandler(websocket, path):
+async def webhandler(websocket):
 
 	global fxsock
 	global fx_net_ctrl_ver
@@ -242,7 +239,20 @@ async def webhandler(websocket, path):
 				pass
 			return
  
-wsserver = websockets.serve(webhandler, "localhost", int(bPort))
- 
-asyncio.get_event_loop().run_until_complete(wsserver)
-asyncio.get_event_loop().run_forever()
+async def main():
+    bPort = input("Port(Blank = 8882): ")
+    if(bPort == ""):
+        bPort = "8882"
+    try:
+        server = await websockets.serve(webhandler, "localhost", int(bPort))
+        print(f"WebSocket server started on localhost:{bPort}")
+        await server.wait_closed()
+    except OSError as e:
+        if e.errno == 48:  # Address already in use
+            print(f"Error: Port {bPort} is already in use. Please choose a different port or stop the process using that port.")
+        else:
+            print(f"Error starting server: {e}")
+        raise
+
+if __name__ == "__main__":
+    asyncio.run(main())
